@@ -67,7 +67,13 @@ func NewServer(groq *GroqClient) *Server {
 		groq:            groq,
 		sessions:        make(map[string]*CallSession),
 		sysPrompt:       BuildSystemPrompt(DefaultCampaignScript),
-		geminiSysPrompt: BuildGeminiLiveSystemPrompt(DefaultCampaignScript, "Sarah"),
+		geminiSysPrompt: BuildGeminiLiveSystemPrompt(DefaultCampaignScript, AgentPersona{
+			FirstName: "Sarah",
+			LastName:  "Miller",
+			FullName:  "Sarah Miller",
+			Gender:    "female",
+			Company:   "Senior Benefit Services",
+		}),
 		voiceEngine:     "gemini",
 		geminiVoice:     "Aoede",
 		geminiModel:     "models/gemini-2.5-flash-native-audio-latest",
@@ -246,14 +252,14 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					voice = s.geminiVoice
 				}
 
-				agentName, agentGender := PickAgentName(voice)
+				persona := PickAgentPersona(voice)
 
 				sess = s.newSession()
 				s.mu.Lock()
 				s.sessions[sess.ID] = sess
 				s.mu.Unlock()
 
-				sysPrompt := BuildGeminiLiveSystemPrompt(DefaultCampaignScript, agentName)
+				sysPrompt := BuildGeminiLiveSystemPrompt(DefaultCampaignScript, persona)
 
 				var gSession *GeminiLiveSession
 				var chosenKey string
@@ -382,21 +388,24 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				geminiLive = gSession
 
 				_ = safeSend(map[string]interface{}{
-					"type":         "call_started",
-					"call_id":      sess.ID,
-					"phone_number": sess.PhoneNumber,
-					"engine":       "gemini",
-					"voice":        voice,
-					"agent_name":   agentName,
-					"agent_gender": agentGender,
-					"active_key":   chosenKeyIdx + 1,
-					"key_pool":     s.geminiKeyPool.Stats(),
+					"type":            "call_started",
+					"call_id":         sess.ID,
+					"phone_number":    sess.PhoneNumber,
+					"engine":          "gemini",
+					"voice":           voice,
+					"agent_name":      persona.FirstName,
+					"agent_last_name": persona.LastName,
+					"agent_full_name": persona.FullName,
+					"agent_gender":    persona.Gender,
+					"agent_company":   persona.Company,
+					"active_key":      chosenKeyIdx + 1,
+					"key_pool":        s.geminiKeyPool.Stats(),
 				})
 
-				log.Printf("[%s] 🎙️ Call started with %s (%s, voice: %s)", sess.ID, agentName, agentGender, voice)
+				log.Printf("[%s] 🎙️ Call started with %s (%s, voice: %s)", sess.ID, persona.FullName, persona.Gender, voice)
 
 				// Trigger opening greeting
-				if err := geminiLive.SendOpeningPrompt(agentName); err != nil {
+				if err := geminiLive.SendOpeningPrompt(persona); err != nil {
 					log.Printf("[%s] Failed to send opening greeting prompt: %v", sess.ID, err)
 				}
 				continue
@@ -1227,7 +1236,13 @@ func main() {
 	if srv.geminiModel == "" {
 		srv.geminiModel = "models/gemini-2.5-flash-native-audio-latest"
 	}
-	srv.geminiSysPrompt = BuildGeminiLiveSystemPrompt(DefaultCampaignScript, "Sarah")
+	srv.geminiSysPrompt = BuildGeminiLiveSystemPrompt(DefaultCampaignScript, AgentPersona{
+		FirstName: "Sarah",
+		LastName:  "Miller",
+		FullName:  "Sarah Miller",
+		Gender:    "female",
+		Company:   "Senior Benefit Services",
+	})
 
 	addr := ":8080"
 	url := fmt.Sprintf("http://localhost%s", addr)

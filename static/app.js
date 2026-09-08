@@ -1592,6 +1592,18 @@ function handleLiveTranscript(role, text) {
       }
       el.transcriptBox.scrollTop = el.transcriptBox.scrollHeight;
     }
+
+    if (currentBotTurn) {
+      const fullBotText = (currentBotTurn.querySelector('.turn-text')?.textContent || '').toLowerCase();
+      if ((fullBotText.includes('not for you') || fullBotText.includes('specifically designed for seniors') || fullBotText.includes('specifically for ages 50')) && !state.isTerminalCall) {
+        const allBubbles = Array.from(document.querySelectorAll('.chat-bubble')).map(b => b.textContent).join(' ');
+        let dispo = 'UNDRAG';
+        if (/\b(8[1-9]|9[0-9]|10[0-9])\b/.test(allBubbles)) {
+          dispo = 'OVERAG';
+        }
+        handleDispositionUpdate(dispo, 'Prospect disqualified: age outside 50-80 group');
+      }
+    }
   } else {
     if (currentBotTurn) {
       const botSpan = currentBotTurn.querySelector('.turn-text');
