@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VICIdial AI — Live Realtime Voice Agent</title>
+  <meta name="description" content="Sub-second full-duplex conversational voice agent with multi-key load balancing, client-side silence gating, and instant barge-in." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css?v=20260908_v5" />
+</head>
+<body>
+
+<div class="app-frame">
+
+  <!-- ══════════════════════════════════════════════════════════
+       TOP NAVIGATION: ENTERPRISE TELEPHONY HUD
+  ═══════════════════════════════════════════════════════════ -->
+  <header class="top-nav">
+    
+    <!-- Card 1: Voice Gateway & Trunk Status -->
+    <div class="hud-card card-gateway">
+      <div class="gateway-left">
+        <div class="brand-logo-wrap">
+          <svg class="v-icon" viewBox="0 0 24 24" fill="none">
+            <path d="M4 4L12 20L20 4" stroke="#00f0ff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="brand-meta">
+          <span class="brand-text">VICIDIAL <span class="accent-cyan">AI GATEWAY</span></span>
+          <span class="brand-sub">SIP WebRTC • Opus 24kHz S2S</span>
+        </div>
+      </div>
+      <div class="status-pill" id="agent-status-pill">
+        <span class="status-dot"></span>
+        <span id="agent-status-text">Ready</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Multi-Key API Resiliency Cluster -->
+    <div class="hud-card card-cluster" id="card-key-pool">
+      <div class="cluster-header">
+        <div class="cluster-title-group">
+          <span class="cluster-pulse-dot"></span>
+          <span class="cluster-title">API ROTATION POOL</span>
+        </div>
+        <span class="cluster-badge" id="pool-health-badge">4/4 ACTIVE</span>
+      </div>
+      
+      <div class="cluster-keys-row" id="pool-keys-track">
+        <div class="key-node active" id="key-node-1" title="API Key 1">
+          <span class="node-led"></span>
+          <span class="node-name">KEY 1</span>
+        </div>
+        <div class="key-node active" id="key-node-2" title="API Key 2">
+          <span class="node-led"></span>
+          <span class="node-name">KEY 2</span>
+        </div>
+        <div class="key-node active" id="key-node-3" title="API Key 3">
+          <span class="node-led"></span>
+          <span class="node-name">KEY 3</span>
+        </div>
+        <div class="key-node active" id="key-node-4" title="API Key 4">
+          <span class="node-led"></span>
+          <span class="node-name">KEY 4</span>
+        </div>
+      </div>
+
+      <!-- Realtime Pool Health & Hours Left to Quota Refresh -->
+      <div class="cluster-telemetry-row">
+        <div class="telemetry-pill" title="Key Pool Operational Health">
+          <span class="t-dot" id="pool-health-dot"></span>
+          <span class="t-label">HEALTH:</span>
+          <span class="t-value t-green" id="pool-health-pct">100%</span>
+        </div>
+        <div class="telemetry-pill" title="Daily API Quota Refresh Countdown (Midnight PT)">
+          <span class="t-clock">⏱</span>
+          <span class="t-label">REFRESH IN:</span>
+          <span class="t-value t-cyan" id="pool-reset-countdown">--h --m --s</span>
+        </div>
+      </div>
+
+      <!-- Real Cooldown Trackers (only rendered when keys are cooling down) -->
+      <div class="pool-cooldown-wrap" id="pool-cooldown-wrap">
+        <div class="pool-cooldown-list" id="pool-cooldown-list"></div>
+      </div>
+      
+      <!-- Hidden backward compatibility elements -->
+      <span class="hidden" id="pool-rpm">60</span>
+      <span class="hidden" id="pool-daily">6,000</span>
+      <span class="hidden" id="savings-pct">0%</span>
+      <span class="hidden" id="savings-tokens">0</span>
+      <span class="hidden" id="savings-bar-fill"></span>
+    </div>
+
+    <!-- Column 3: Session Controls & Live Conversation Stream -->
+    <div class="nav-session-col">
+      <aside class="hud-card card-session" id="call-control-hud">
+        <div class="session-top-row">
+          <div class="voice-picker-wrap">
+            <label for="voice-select" class="voice-label">VOICE:</label>
+            <select id="voice-select" class="voice-dropdown" title="Select Voice Persona">
+              <option value="Aoede" selected>Aoede (Female)</option>
+              <option value="Kore">Kore (Female)</option>
+              <option value="Puck">Puck (Male)</option>
+              <option value="Charon">Charon (Male)</option>
+              <option value="Fenrir">Fenrir (Male)</option>
+            </select>
+          </div>
+          <div class="disp-badge hidden" id="live-disposition-pill">
+            <span class="disp-tag">DISPO:</span>
+            <span id="live-disposition-val" class="disp-code">NONE</span>
+          </div>
+        </div>
+
+        <div class="session-metrics-row">
+          <!-- Live Call Duration Timer Widget -->
+          <div class="call-timer-card" id="call-timer-widget" title="Live SIP Call Duration">
+            <div class="timer-meta-row">
+              <span class="timer-dot" id="call-timer-dot"></span>
+              <span class="timer-title" id="call-timer-status-label">DURATION</span>
+            </div>
+            <div class="timer-digits-row">
+              <span class="timer-digits" id="call-timer-digits">00:00</span>
+            </div>
+          </div>
+
+          <!-- Live Call Tokens Used Widget -->
+          <div class="call-tokens-card" id="call-tokens-widget" title="Live Tokens Used for this Call">
+            <div class="tokens-meta-row">
+              <span class="tokens-dot"></span>
+              <span class="tokens-title">TOKENS</span>
+            </div>
+            <div class="tokens-digits-row">
+              <span class="tokens-digits" id="call-tokens-digits">0</span>
+              <span class="tokens-unit">tok</span>
+            </div>
+          </div>
+        </div>
+
+        <span class="hidden" id="engine-status-badge">⚡ S2S DUPLEX</span>
+      </aside>
+
+      <!-- Live Conversation Stream Box (Anchored directly under Voice Selector & Session Controls) -->
+      <aside class="stream-box-card" id="conversation-section">
+        <div class="stream-header">
+          <div class="stream-header-left">
+            <span class="stream-header-icon">💬</span>
+            <span class="stream-title">Conversation Stream</span>
+            <span class="active-key-indicator hidden" id="active-call-key-badge">KEY 1</span>
+          </div>
+          <span class="live-tag" id="live-chat-status">
+            <span class="live-blip"></span> LIVE
+          </span>
+        </div>
+
+        <!-- Transcript Bubble Stream -->
+        <div class="stream-body" id="transcript-container" role="log" aria-live="polite">
+          <div id="transcript-empty" class="stream-empty">
+            <div class="empty-icon">🎙️</div>
+            <div class="empty-text">Awaiting live speech…</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MAIN STAGE: CIRCULAR VOICE ORB + LIVE SUBTITLE + WHATSAPP CONTROLS
+  ═══════════════════════════════════════════════════════════ -->
+  <main class="center-stage">
+    <!-- Circular Voice Orb Canvas & Centered Typography -->
+    <div class="orb-wrapper" id="orb-container">
+      <div class="orb-ambient-halo"></div>
+      <canvas id="circular-orb-canvas" width="460" height="460"></canvas>
+
+      <!-- Center Typography inside Circle -->
+      <div class="orb-center-label" id="orb-center-info">
+        <div class="orb-title" id="orb-state-title">AGENT</div>
+        <div class="orb-sub" id="orb-state-sub">IDLE</div>
+        <div class="orb-bars-wrap" id="orb-sound-bars">
+          <span class="bar bar-1"></span>
+          <span class="bar bar-2"></span>
+          <span class="bar bar-3"></span>
+          <span class="bar bar-4"></span>
+          <span class="bar bar-5"></span>
+        </div>
+      </div>
+
+      <!-- Live Barge-in alert badge -->
+      <div id="interruption-flash" class="barge-banner hidden">
+        ⚡ BARGE-IN DETECTED
+      </div>
+    </div>
+
+    <!-- Live Dynamic Subtitle Right Under the Circular Visualizer -->
+    <div class="orb-live-subtitle-wrap" id="orb-subtitle-wrap">
+      <div class="orb-live-subtitle hidden" id="orb-live-subtitle">
+        <div class="sub-speaker-tag" id="sub-speaker-tag">
+          <span class="sub-dot"></span>
+          <span class="sub-name" id="sub-speaker-name">AGENT</span>
+        </div>
+        <div class="sub-content" id="sub-content"></div>
+      </div>
+    </div>
+
+    <!-- WhatsApp-Style Call Control Dock -->
+    <div class="whatsapp-call-dock" id="whatsapp-call-dock">
+      <!-- Mute/Unmute Button -->
+      <button class="call-action-btn btn-mute-circle" id="btn-mute" disabled title="Mute Microphone" aria-label="Mute Microphone">
+        <div class="action-icon-circle">
+          <svg class="action-svg icon-mic" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+          </svg>
+          <svg class="action-svg icon-mic-off hidden" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/>
+          </svg>
+        </div>
+        <span class="btn-caption" id="mute-caption">Mute</span>
+      </button>
+
+      <!-- Main Action: Start Live Call (WhatsApp Green) -->
+      <button class="call-action-btn btn-call-main btn-start-circle" id="btn-start-call" title="Start Live Call" aria-label="Start Call">
+        <div class="action-icon-circle main-call-circle">
+          <svg class="action-svg phone-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+          </svg>
+        </div>
+        <span class="btn-caption" id="start-caption">Start Call</span>
+      </button>
+
+      <!-- Hangup / End Call Button (WhatsApp Red) -->
+      <button class="call-action-btn btn-end-circle" id="btn-manual-hangup" disabled title="End Call" aria-label="End Call">
+        <div class="action-icon-circle end-call-circle">
+          <svg class="action-svg end-phone-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/>
+          </svg>
+        </div>
+        <span class="btn-caption">End</span>
+      </button>
+    </div>
+  </main>
+
+</div>
+
+<!-- Hidden audio player for legacy fallback -->
+<audio id="audio-player" aria-hidden="true"></audio>
+
+<script src="/static/app.js?v=20260908_v5"></script>
+</body>
+</html>

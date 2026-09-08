@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+
+# Go build artifacts
+*.exe
+*.out
+*.test
+*.app
+vicidialer-sim
+vicidialer-sim-bin
+
+# Local scratch files and generated media
+scratch/*.wav
