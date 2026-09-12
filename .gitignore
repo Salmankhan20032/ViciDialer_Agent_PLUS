@@ -1,13 +1,3 @@
-vicidial-bot
-*.log
 .env
 .env.*
 !.env.example
-.venv/
-models/
-
-# Generated voice assets are intentionally kept in the project.
-# Keep only local secrets and temporary files out of Git.
-*.key
-*.pem
-.DS_Store
