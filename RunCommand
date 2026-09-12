@@ -1,2 +1,0 @@
-
-cd /Users/salmansmacbook/Desktop/ViciDialerAgent/vicidialer-sim && kill -9 $(lsof -ti :8080) 2>/dev/null; ./vicidialer-sim-bin

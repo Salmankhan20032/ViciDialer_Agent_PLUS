@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Daniel Brooks · Live conversation</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon"><span></span><span></span><span></span></div>
+        <div>
+          <p class="eyebrow">VICIDIAL BOT</p>
+          <strong>Daniel Brooks</strong>
+        </div>
+      </div>
+      <div class="topbar-status"><span class="status-dot"></span><span id="health">checking…</span></div>
+    </header>
+
+    <main class="live-layout">
+      <section class="stage" aria-label="Live conversation controls">
+        <div class="stage-kicker"><span class="live-dot"></span> LIVE CONVERSATION</div>
+        <div id="orb-stage" class="orb-stage idle" aria-live="polite">
+          <div class="orb-ring ring-one"></div>
+          <div class="orb-ring ring-two"></div>
+          <div id="orb" class="orb">
+            <div class="orb-core"></div>
+            <div class="orb-bars"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+          <h1 id="state">Ready to call</h1>
+        <p id="caption" class="stage-caption">Start a call to connect with Daniel through the local Vosk voice runtime.</p>
+        <div class="voice-picker">
+          <label for="voice-model">VOICE</label>
+          <select id="voice-model" disabled><option>Loading local voices…</option></select>
+          <span id="voice-status">Loading available voice folders</span>
+        </div>
+        <div class="stage-controls">
+          <button id="live" class="primary-action"><span class="mic-symbol">●</span> Start a Call</button>
+          <button id="mic-toggle" class="ghost-action mic-toggle" disabled><span class="mic-icon" aria-hidden="true">🎙</span><span id="mic-label">Mic on</span></button>
+          <button id="hangup" class="end-call" disabled>End call</button>
+        </div>
+        <p class="privacy-note"><span class="lock-symbol">⌁</span> Microphone PCM stays on this machine and is streamed to the local Vosk adapter. Chrome speech recognition is not used.</p>
+      </section>
+
+      <aside class="side-panel">
+        <div class="panel-heading"><div><p class="eyebrow">SESSION</p><h2>Conversation</h2></div><span id="session-state" class="session-pill">idle</span></div>
+        <div class="live-stats" aria-label="Live system stats">
+          <div class="live-stats-heading"><span class="eyebrow">LIVE STATS</span><span class="stats-pulse"></span></div>
+          <div class="stats-grid"><div><strong id="stat-cpu">—</strong><span>CPU</span></div><div><strong id="stat-ram">—</strong><span>RAM</span></div><div><strong id="stat-network">—</strong><span>NETWORK</span></div></div>
+        </div>
+        <div class="last-disposition" aria-live="polite">
+          <div class="last-disposition-heading"><span class="eyebrow">LAST CALL</span><span class="history-dot">●</span></div>
+          <strong id="last-call-code">No call yet</strong>
+          <span id="last-call-label">The last disposition will appear here.</span>
+          <time id="last-call-time"></time>
+        </div>
+        <div id="transcript" class="transcript" aria-live="polite">
+          <div class="empty-transcript"><div class="empty-icon">✦</div><p>Your conversation will appear here.</p><span>Daniel will guide the customer through the qualification flow.</span></div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer"><span>Daniel Brooks · Orpheus English voice bot</span><span>Local voice runtime · <code>/voices</code></span></footer>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,14 +1,13 @@
+vicidial-bot
+*.log
 .env
 .env.*
 !.env.example
+.venv/
+models/
 
-# Go build artifacts
-*.exe
-*.out
-*.test
-*.app
-vicidialer-sim
-vicidialer-sim-bin
-
-# Local scratch files and generated media
-scratch/*.wav
+# Generated voice assets are intentionally kept in the project.
+# Keep only local secrets and temporary files out of Git.
+*.key
+*.pem
+.DS_Store
